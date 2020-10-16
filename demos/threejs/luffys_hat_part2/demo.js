@@ -27,7 +27,7 @@ function init_threeScene(spec) {
   const loader = new THREE.GLTFLoader();
   // Load our cool hat
   loader.load(
-    'https://ashish7777777.github.io/earrings/',
+    'https://ashish7777777.github.io/earrings/earrings2.glb',
     function (geometry) {
       // we create our Hat mesh
       // const mat = new THREE.MeshBasicMaterial({
