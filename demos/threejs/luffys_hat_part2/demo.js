@@ -38,7 +38,7 @@ function init_threeScene(spec) {
 
       geometry.scene.scale.multiplyScalar(1.5);
       geometry.scene.rotation.set(-0.1, 0, 0);
-      geometry.scene.position.set(0.0, 0.5, -0.2);
+      geometry.scene.position.set(0.0,1, -0.2);
       geometry.scene.frustumCulled = false;
       geometry.scene.side = THREE.DoubleSide;
 
@@ -104,6 +104,88 @@ function init_threeScene(spec) {
       });
     }
   );
+
+
+loader.load(
+    'https://ashish7777777.github.io/earrings/neckles.glb',
+    function (geometry) {
+      // we create our Hat mesh
+      // const mat = new THREE.MeshBasicMaterial({
+      //   map: new THREE.TextureLoader().load("./models/luffys_hat/Texture2.jpg")
+      // });
+
+      // const HATMESH = new THREE.Mesh(geometry, mat);
+
+      geometry.scene.scale.multiplyScalar(0.08);
+      geometry.scene.rotation.set(-90, 0, 0);
+      geometry.scene.position.set(0.0,-2.5, 0);
+      geometry.scene.frustumCulled = false;
+      geometry.scene.side = THREE.DoubleSide;
+
+
+      // CREATE THE MASK
+      const maskLoader = new THREE.BufferGeometryLoader();
+      /*
+      faceLowPolyEyesEarsFill.json has been exported from dev/faceLowPolyEyesEarsFill.blend using THREE.JS blender exporter with Blender v2.76
+      */
+      maskLoader.load('./models/mask/faceLowPolyEyesEarsFill2.json', function (maskBufferGeometry) {
+          const vertexShaderSource = 'varying vec2 vUVvideo;\n\
+        varying float vY, vNormalDotZ;\n\
+        const float THETAHEAD=1.4;\n\
+        void main() {\n\
+          vec4 mvPosition = modelViewMatrix * vec4( position, 1.0);\n\
+          vec4 projectedPosition=projectionMatrix * mvPosition;\n\
+          gl_Position=projectedPosition;\n\
+          \n\
+          // compute UV coordinates on the video texture:\n\
+          vec4 mvPosition0 = modelViewMatrix * vec4( position, 1.0 );\n\
+          vec4 projectedPosition0 = projectionMatrix * mvPosition0;\n\
+          vUVvideo = vec2(0.5,0.5) + 0.5*projectedPosition0.xy/projectedPosition0.w;\n\
+          vY = position.y * cos(THETAHEAD)-position.z*sin(THETAHEAD);\n\
+          vec3 normalView = vec3(modelViewMatrix * vec4(normal,0.));\n\
+          vNormalDotZ = pow(abs(normalView.z), 1.5);\n\
+        }';
+
+         const fragmentShaderSource = "precision lowp float;\n\
+        uniform sampler2D samplerVideo;\n\
+        varying vec2 vUVvideo;\n\
+        varying float vY, vNormalDotZ;\n\
+        void main() {\n\
+          vec3 videoColor = texture2D(samplerVideo, vUVvideo).rgb;\n\
+          float darkenCoeff = smoothstep(-0.5, 0.45, vY);\n\
+          float borderCoeff = smoothstep(0.0, 0.85, vNormalDotZ);\n\
+          gl_FragColor = vec4(videoColor*(1.-darkenCoeff), borderCoeff );\n\
+          // gl_FragColor=vec4(borderCoeff, 0., 0., 1.);\n\
+          // gl_FragColor=vec4(darkenCoeff, 0., 0., 1.);\n\
+        }";
+
+        const mat = new THREE.ShaderMaterial({
+          vertexShader: vertexShaderSource,
+          fragmentShader: fragmentShaderSource,
+          transparent: true,
+          flatShading: false,
+          uniforms: {
+            samplerVideo:{ value: JeelizThreeHelper.get_threeVideoTexture() }
+          },
+          transparent: true
+        });
+        maskBufferGeometry.computeVertexNormals();
+        const FACEMESH = new THREE.Mesh(maskBufferGeometry, mat);
+        FACEMESH.frustumCulled = false;
+        FACEMESH.scale.multiplyScalar(1.12 * 1.1);
+        FACEMESH.position.set(0, 0.5, -0.5);
+        
+
+        HATOBJ3D.add(geometry.scene);
+        HATOBJ3D.add(FACEMESH);
+        addDragEventListener(HATOBJ3D);
+
+        threeStuffs.faceObject.add(HATOBJ3D);
+      });
+    }
+  );
+
+
 
   // CREATE THE VIDEO BACKGROUND
   function create_mat2d(threeTexture, isTransparent){ //MT216: we put the creation of the video material in a func because we will also use it for the frame
